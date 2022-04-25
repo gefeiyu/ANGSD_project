@@ -1,0 +1,1070 @@
+---
+title: "ANGSD Final Project"
+author: "Gefei Yu (Vera)"
+date: "Activation of NF-kB immune pathway of Drosophila melanogaster after wasp parasitization"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction  
+
+In addition to the dangers of infections by bacteria, fungi, and viruses, all insects also face a diverse range of natural predators and parasitoids (Higareda Alvear et al., 2021). The reproduction of parasitoids is through laying eggs on other species and then their larvae would consume the host’s resources during development (Salazar-Jaramillo et al., 2017). Many insects species have a large variety of mechanisms that allow for an effective immune response to parasitoids, as evidenced by the many species of insects that are host to different parasitoid species (Salazar-Jaramillo et al., 2017).\
+  
+  *Drosophila melanogaster*, a well-studied species of fly in the family Drosophilidae, can be attacked by parasitoid wasp species at the larval or pupal stage (Salazar-Jaramillo et al., 2017). Previous studies have shown that parasitoid wasp infection activates JAK-STAT immune pathway in *Drosophila* larva (Yang et al., 2015). The nuclear factor kappa B (NF-kB) pathways are multi-component innate immune signaling pathways in *Drosophila* (Minakhina & Steward, 2006). The *Drosophila* genome codes for three NF-kB family homologs: *Dorsal*, *Dorsal-related immunity factor*, and *Relish* (Hetru & Hoffmann, 2009). Two recognition and signaling cascades can activate the NF-kB immune response: the Toll pathway and the immune deficiency (Imd) pathway; The Toll pathway is activated by fungi or Gram-positive bacteria, whereas the Imd pathway responds to infections by Gram-negative bacteria (Hetru & Hoffmann, 2009). Some critical components and targets of *Drosophila* NF-kB pathways include *Dorsal (dl), Dorsal-related immunity factor (Dif), Relish (Rel), Cactus (cact), Toll (Tl), Tube (tub), Pelle (pll), Spatzle (spz), Immune deficiency (imd), PGRP-LC, and PGRP-LE* (Minakhina & Steward, 2006).\
+  
+  Here in this study, I investigated whether *Drosophila* immune response upon wasp infection is regulated by NF-kB pathways. RNA-seq data published by Salazar-Jaramillo et al. were used to compare the transcriptional activity during the immune response of *Drosophila melanogaster* larvae after a parasitoid attack by *A. tabida* wasp (Salazar-Jaramillo et al., 2017). Gene expressions were analyzed at two different time points, 5 hours and 50 hours after wasp parasitization, which indicates the initiation and completion of *Drosophila* immune response (Salazar-Jaramillo et al., 2017). I hypothesized that NF-kB pathways are involved in *Drosophila* immune response to wasp infection. 
+
+# Methods
+
+## Data Description
+The RNA-seq data used in this study is published by Salazar-Jaramillo et al (Salazar-Jaramillo et al., 2017). The original data includes RNA-seq data of four Drosophila species, D. melanogaster, D. simulans, D. sechellia, and D. yakuba, with (Par) and without (Ctl) wasp parasitization by A. tabida female. In this study, I only focused on D. melanogaster. Data were collected at two time points, 5 hours and 50 hours which indicate the initiation and completion of the immune response (Salazar-Jaramillo et al., 2017). Furthermore, the original data used four lines for D. melanogaster, two experimentally selected lines for increased parasitoid resistance, and two non-selected control lines. Three biological replicates were collected for each line, treatment, and time point (Salazar-Jaramillo et al., 2017). In this study, I downloaded, preprocessed, did alignment, and counted reads for all four lines, but only the two non-selected lines were used for differential expression gene analysis. \
+
+Summary table of data: 
+
+|     Condition     	| Lines 	| Timpoints 	| Number of replicates 	| DESeq2 	|
+|:-----------------:	|:-----:	|:---------:	|:--------------------:	|:------:	|
+|   Control (ctl)   	|   C1  	|     5h    	|           3          	|   Yes  	|
+|   Control (ctl)   	|   C1  	|    50h    	|           3          	|   Yes  	|
+|   Control (ctl)   	|   C2  	|     5h    	|           3          	|   Yes  	|
+|   Control (ctl)   	|   C2  	|    50h    	|           3          	|   Yes  	|
+|   Control (ctl)   	|   S1  	|     5h    	|           3          	|   No   	|
+|   Control (ctl)   	|   S1  	|    50h    	|           3          	|   No   	|
+|   Control (ctl)   	|   S2  	|     5h    	|           3          	|   No   	|
+|   Control (ctl)   	|   S2  	|    50h    	|           3          	|   No   	|
+| Parasitized (par) 	|   C1  	|     5h    	|           3          	|   Yes  	|
+| Parasitized (par) 	|   C1  	|    50h    	|           3          	|   Yes  	|
+| Parasitized (par) 	|   C2  	|     5h    	|           3          	|   Yes  	|
+| Parasitized (par) 	|   C2  	|    50h    	|           3          	|   Yes  	|
+| Parasitized (par) 	|   S1  	|     5h    	|           3          	|   No   	|
+| Parasitized (par) 	|   S1  	|    50h    	|           3          	|   No   	|
+| Parasitized (par) 	|   S2  	|     5h    	|           3          	|   No   	|
+| Parasitized (par) 	|   S2  	|    50h    	|           3          	|   No   	|
+
+## Detailed methods summary
+
+**Data downloading, Pre-processing and Quality control**\
+
+The RNA-seq data is paried end. Data was located at: https://www.ebi.ac.uk/ena/browser/view/PRJEB15540. To download data, the tsv file contain all the data information was first obtained. Then, D.melanogaster data info was extracted to a sub-tsv file. Reads are the downloaded using wget. Pre-alignment quality control was done by FastQC. Adapter trimming was done by Trim Galore. Summary-level quality control was reported by MultiQC. The sequence quality of many samples have better performance after adapter trimming. In the two non-selected lines, C1 and C2, Dmel_parasitized_50_ERR1662570 (sample 38) and Dmel_parasitized_5_ERR1662585 (sample 54) have abnormal count numbers, suggesting that we should exclude these two samples in the downstream analysis. The GC content of almost all samples are not normally distributed, suggesting that there might be some contamination or some other kinds of bias. And the sequence duplication levels are abnormally high for many samples. \
+
+
+**Alignment and Generating count table**\
+
+Hisat2 was used for read alignment because it has pre-built indexes. The pre-built index for D.melanogaster genome transcript, BDGP6, was downloaded from http://daehwankimlab.github.io/hisat2/download/#d-melanogaste. Alignment was then performed using Hisat2 (parameters: -q -p 24 -x index -1 read1 -2 read2). The aligned sam files were then converted to bam files, remove unmapped reads, sorted and indexed using SAMtools (parameters: samtools view -@ 24 -b -h -F 4 ; samtools sort -o ; samtools index). The mean overall alignment rate was: 84.2325%; the lowest overall alignment rate was: 64.88%; the highest overall alignment rate was: 92.85%. Because of that Hisat2 has a pre-built index, gtf file was not needed for alignment. For downstream analysis that needs an annotation file, the gtf file used by hisat2 to build a pre-built index was found through https://github.com/DaehwanKimLab/hisat2/blob/master/scripts/make_bdgp6_tran.sh and downloaded. Bias towards the 3’ end / 5’ end was checked using gene_body_coverage.py from RSeQC and MultiQC. All samples are slightly biased towards the 3’ end. Counts were calculated with featureCounts (parameters: -T 5  -p -t exon -g gene_id -s 2). The orientation of the stranded libraries was not mentioned in the original paper. Thus, it was determined empirically, by running one sample both ways and then checking which one aligns more. The alignment rate of stranded (s1) was 6.3%, while the alignment rate of reverse stranded (s2) was 80.2%. Therefore, the library should be reverse stranded oriented. \
+
+
+**Differential expression gene analysis**\
+
+Differential expression gene analysis was performed with DESeq2 implemented in R. The count table that includes all four lines of D.melanogaster is loaded in R. The Flybase IDs (eg. FBgn0267430) were first converted to gene symbols (eg. Pzl) using org.Dm.eg.db. Then the two selected lines with increased resistance to parasitoids were removed because they are not the focus of this study (I downloaded, aligned, and count them just in case I need them). In this study, only the two non-selected lines, C1 and C2 are analyzed. Due to that this study has two conditions: Parasitized vs. Control and two time points: 50h vs. 5h, contrast, and interaction were involved and the design was: design = ~ condition + timepoint + condition: timepoint. The counts in each sample were checked using bar plots. Two samples, Dmel_par_50_sample38 in C1 and Dmel_par_5_sample54 in C2 have too few counts and too many counts, respectively, compared to other samples which are also confirmed in the fastqc results. Thus, these two samples were excluded and the two control lines were combined to ensure at least 5 replicates for each condition. Genes that have no count were also deleted. Size factor plot and PCA plot were generated. Samples in different groups (ctl:5, ctl:50, par:5, par:50) are not well clustered and different groups are not well separated. In addition, the PCA plot shows that different timepoints dominate the difference which indicates that the parasite response is more subtle compared to the developmental changes. Differential expression gene analysis was performed and volcano plots were generated for Par5 vs. Ctl5, Ctl50 vs. Ctl5, Par50 vs. Par5, and Par50 vs. Ctl50; 43, 744, 1674, 60 significantly  DEG were identified respectively. The most interesting comparisons that study the immune response are Par5 vs. Ctl5, and Par50 vs. Ctl50. Heatmaps of significantly DEG at 5h (Par5 vs. Ctl5) and 50h (Par50 vs. Ctl50) were generated; two control samples at 5h seem to have abnormal expression compared to other control samples at 5h. Gene ontology was also performed for significantly DEG at 5h (Par5 vs. Ctl5) and 50h (Par50 vs. Ctl50). No significant DEG at 50h was found to participate in the immune response. The results of 5h show that 10 significantly DEG at 5h participate in immune response, Eig71Ee, PGRP-SB1, edin, AttC, Mtk, DptA, DptB, lectin-24A, Tep2, and Tep1. By researching on Flybase,4 of these 10 genes were found to encode components of the immune responsive pathways Imd (PGRP-SB1, DptA, DptB) and the Toll pathways (Mtk). Plots of normalized counts for these four genes were generated.\
+
+
+
+## All codes and figures
+
+### Download data
+
+#### Download fastq files
+
+Data located at:\
+https://www.ebi.ac.uk/ena/browser/view/PRJEB15540
+
+```{tsv file}
+# at local
+scp filereport_read_run_PRJEB15540_tsv.txt gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/
+
+cd /athena/angsd/scratch/gyu4002/Project2/
+grep 'D. melanogaster' filereport_read_run_PRJEB15540_tsv.txt | cat > Dmel_filereport_read_run_PRJEB15540_tsv.txt
+```
+
+
+
+```{download files script}
+#!/bin/bash
+#SBATCH --partition=angsd_class
+#SBATCH -J download
+#SBATCH -e download2.err
+#SBATCH -o download2.out
+#SBATCH --mem=36G 
+#SBATCH -t 24:00:00
+#SBATCH -c 6
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1 
+
+cd /athena/angsd/scratch/gyu4002/Project2/data
+count=0
+echo "start"
+
+while read line; do  
+ERR=$( echo $line | cut -d$' ' -f2  );  
+echo $ERR;
+r1=$( echo $line | cut -d$' ' -f3 | cut -d$';' -f1);  
+r2=$( echo $line | cut -d$' ' -f3 | cut -d$';' -f2);  
+treat=$( echo $line | cut -d$' ' -f6); 
+hr=$( echo $line | cut -d$' ' -f7); 
+wget -O Dmel_${treat}_${hr}_${ERR}_1.fastq.gz $r1; 
+wget -O Dmel_${treat}_${hr}_${ERR}_2.fastq.gz $r2; 
+echo "Done Dmel_${treat}_${hr}_${ERR}";
+let count++;
+echo $count;
+done  < /athena/angsd/scratch/gyu4002/Project2/Dmel_filereport_read_run_PRJEB15540_tsv2.txt
+
+echo "Done ALL"
+
+```
+
+
+### pre-alignment QC
+#### fastqc on untrimmed data
+
+```{untrimmed fastqc}
+spack load fastqc
+mkdir fastqc_output
+
+cd data/
+
+for file in Dmel_control_50_*_1.fastq.gz; do echo $file; r2=${file%_1.fastq.gz}_2.fastq.gz; echo $r2; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $file --extract; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $r2 --extract; echo "Done"; done
+
+for file in Dmel_control_5_*_1.fastq.gz; do echo $file; r2=${file%_1.fastq.gz}_2.fastq.gz; echo $r2; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $file --extract; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $r2 --extract; echo "Done"; done
+
+for file in Dmel_parasitized_50_*_1.fastq.gz; do echo $file; r2=${file%_1.fastq.gz}_2.fastq.gz; echo $r2; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $file --extract; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $r2 --extract; echo "Done"; done
+
+
+for file in Dmel_parasitized_5_*_1.fastq.gz; do echo $file; r2=${file%_1.fastq.gz}_2.fastq.gz; echo $r2; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $file --extract; fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output $r2 --extract; echo "Done"; done
+
+scp gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/data/fastqc_output/Dmel_control_50_ERR1662540_1_fastqc.html .
+
+```
+
+
+#### Adapter trimming
+```{trimgalore scripts}
+#!/bin/bash
+#SBATCH --partition=angsd_class
+#SBATCH -J trim
+#SBATCH -e trim.err
+#SBATCH -o trim.out
+#SBATCH --mem=36G 
+#SBATCH -t 24:00:00
+#SBATCH -c 6
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1 
+
+spack load -r trimgalore
+
+cd /athena/angsd/scratch/gyu4002/Project2/data
+
+for file in *_1.fastq.gz; do echo $file; r2=${file%_1.fastq.gz}_2.fastq.gz; trim_galore --illumina --paired $file1 $r2; done
+
+echo "Done ALL"
+
+
+```
+
+#### fastqc on adapter-trimmed data
+
+```{fastqc on trimmed file script}
+#!/bin/bash
+#SBATCH --partition=angsd_class
+#SBATCH -J fastqc
+#SBATCH -e fastqc.err
+#SBATCH -o fastqc.out
+#SBATCH --mem=36G 
+#SBATCH -t 24:00:00
+#SBATCH -c 6
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1 
+
+spack load fastqc
+
+cd /athena/angsd/scratch/gyu4002/Project2/data
+
+for file in *.fq.gz ; do echo $file;  fastqc -o /athena/angsd/scratch/gyu4002/Project2/data/fastqc_trim_output $file --extract;  echo "Done"; done
+
+echo "Done ALL"
+```
+
+#### MutiQC on fastqc
+
+```{mutiqc on fastqc}
+spack load -r py-multiqc
+
+# untrimmed report
+cd /athena/angsd/scratch/gyu4002/Project2/data/fastqc_output
+multiqc .
+scp gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/data/fastqc_output/multiqc_report.html .
+
+# trimmed report
+cd /athena/angsd/scratch/gyu4002/Project2/data/fastqc_trim_output
+multiqc .
+scp gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/data/fastqc_trim_output/multiqc_report.html trimmed_multiqc_report.html
+```
+
+MultiQC Sequence Quality Histograms of Untrimmed data\
+![](/Users/verayu/Desktop/ANGSD/untrimmed_fastqc_per_base_sequence_quality_plot.png)
+
+MultiQC Sequence Quality Histograms of Trimmed data\
+![](/Users/verayu/Desktop/ANGSD/trimmed_fastqc_per_base_sequence_quality_plot.png)
+MultiQC Sequence Counts\
+![](/Users/verayu/Desktop/ANGSD/fastqc_sequence_counts_plot.png)
+
+MultiQC Per Sequence GC Content \
+![](/Users/verayu/Desktop/ANGSD/fastqc_per_sequence_gc_content_plot.png)
+
+MultiQC Sequence Duplication Levels\
+![](/Users/verayu/Desktop/ANGSD/fastqc_sequence_duplication_levels_plot.png)
+These results shows that the sequence quality of many samples have better performance after adapter trimming. In the two non-selected lines, C1 and C2, Dmel_parasitized_50_ERR1662570 (sample 38) and Dmel_parasitized_5_ERR1662585 (sample 54) have abnormal count numbers, suggesting that we should exclude these two samples in the downstream analysis. The GC content of almost all samples are not normally distributed, suggesting that there might be some contamination or some other kinds of bias. And the sequence duplication levels are abnormally high for many samples. \
+(as also said in the detailed methods summary section)
+
+
+
+#### Reference indexing
+
+Index file: 
+http://daehwankimlab.github.io/hisat2/download/#d-melanogaster
+
+downloaded to local (didnt find a download link to use wget)
+```{hisat2 upload pre-built ref index from local}
+scp bdgp6_tran.tar.gz gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/ref/ 
+
+```
+
+
+
+### Alignment (HISAT2)
+
+```{align using HISAT2 script}
+#!/bin/bash
+#SBATCH --partition=angsd_class
+#SBATCH -J hisat2_trim
+#SBATCH -e hisat2_trim.err
+#SBATCH -o hisat2_trim.out
+#SBATCH --mem=12G
+#SBATCH -t 24:00:00
+#SBATCH -c 6
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+
+
+spack load hisat2@2.1.0
+spack load samtools@1.9%gcc@6.3.0
+
+cd /athena/angsd/scratch/gyu4002/Project2/data
+
+# change Dmel_control_ to Dmel_parasitized_ to the other half data
+for file in Dmel_control_*_1_val_1.fq.gz; do echo $file; r2=${file%_1_val_1.fq.gz}_2_val_2.fq.gz; echo $r2; hisat2 -q -p 24 -x /athena/angsd/scratch/gyu4002/Project2/ref/bdgp6_tran/genome_tran -1 $file  -2 $r2 | samtools view -@ 24 -b -h -F 4 - | samtools sort -o ${file%_1_val_1.fq.gz}.trimmed.sorted.bam;  done
+
+echo "Done alignment"
+
+
+for file in *.trimmed.sorted.bam; do samtools index $file; done
+
+echo "Done everything"
+
+
+
+```
+
+Parameters:\
+
+-q: the input files are fastq files\
+-p: specify number of threads\
+-x: the basename and path of the index for reference files\
+-1: read 1\
+-2: read 2\
+
+
+
+
+### Post-alignment QC
+#### Overall alignment rate
+
+```{alignment score}
+awk '/_1_val_1.fq.gz/ {print}' hisat2_trim.out | egrep -o "Dmel_control_[50]+_ERR[0-9]+" | cat > tmp_hisat2trim_name.txt
+
+awk '/_1_val_1.fq.gz/ {print}' hisat2_trim2.out | egrep -o "Dmel_parasitized_[50]+_ERR[0-9]+" | cat > tmp_hisat2trim2_name.txt
+
+awk '/overall/ {print}' hisat2_trim.err | egrep -o "[0-9]+.[0-9]+%" | cat > tmp_hisat2trim_score.txt
+
+awk '/overall/ {print}' hisat2_trim2.err | egrep -o "[0-9]+.[0-9]+%" | cat > tmp_hisat2trim2_score.txt
+
+paste tmp_hisat2trim_name.txt tmp_hisat2trim_score.txt | cat > overall_alignment.txt
+
+paste tmp_hisat2trim2_name.txt tmp_hisat2trim2_score.txt | cat >> overall_alignment.txt
+
+rm tmp_*
+
+# control_line.txt is hand made (after deseq2) contains all the ERR num for control lines
+grep -f control_line.txt overall_alignment.txt | cat > overall_alignment_ctrl.txt
+
+more overall_alignment_ctrl.txt
+```
+![](/Users/verayu/Desktop/ANGSD/overall_alignment.png)
+
+
+Mean overall alignment rate:\
+code: egrep -o '[0-9]+\.[0-9]+' overall_alignment_ctrl.txt | awk '{ total += $1 } END { print total/NR }'\
+output: \
+84.2325\
+
+Lowest five overall alignment rate:\
+code: sort -nk2 overall_alignment_ctrl.txt | head -5 \
+output: \
+Dmel_control_50_ERR1662559	64.88%\
+Dmel_parasitized_5_ERR1662598	71.81%\
+Dmel_control_5_ERR1662576	74.35%\
+Dmel_parasitized_5_ERR1662578	78.97%\
+Dmel_control_5_ERR1662599	79.45%\
+
+
+Highest five overall alignment rate:\
+code: sort -nk2 overall_alignment_ctrl.txt | tail -5 \
+output: \
+Dmel_parasitized_50_ERR1662550	89.54%\
+Dmel_parasitized_5_ERR1662585	90.89%\
+Dmel_control_50_ERR1662610	91.00%\
+Dmel_control_50_ERR1662551	91.57%\
+Dmel_control_5_ERR1662580	92.85%\
+
+
+#### Download annotation file
+
+Becuase I used Hisat2 pre-built index, gtf file was not needed for alignment. For downstream analysis that need annotation file, the gtf file used by hisat2 to build pre-built index was downloaded. 
+
+The GTF file found through:
+https://github.com/DaehwanKimLab/hisat2/blob/master/scripts/make_bdgp6_tran.sh
+
+```{download gtf file}
+wget 'ftp://ftp.ensembl.org/pub/release-84/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.84.gtf.gz'
+```
+
+
+#### Gene body coverage (rseqc)
+
+
+```{gene body coverage}
+cd data/
+mkdir rseqc_geneBody_coverage
+cd rseqc_geneBody_coverage/
+mkdir output
+
+cd /athena/angsd/scratch/gyu4002/Project2/ref
+wget ftp://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred
+chmod +x gtfToGenePred
+wget ftp://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/genePredToBed
+chmod +x genePredToBed
+
+gtf2gp=/athena/angsd/scratch/gyu4002/Project2/ref
+gp2bed=/athena/angsd/scratch/gyu4002/Project2/ref
+
+gzip -cd Drosophila_melanogaster.BDGP6.84.gtf.gz | $gtf2gp /dev/stdin /dev/stdout | $gp2bed /dev/stdin annot.bed
+
+# This code is provided by Merv.
+```
+
+
+```{rseqc script}
+#!/bin/bash
+#SBATCH --partition=angsd_class
+#SBATCH -J rseqc1
+#SBATCH -e rseqc1.err
+#SBATCH -o rseqc1.out
+#SBATCH --mem=72G 
+#SBATCH -t 48:00:00
+#SBATCH -c 6
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1 
+
+spack load -r py-rseqc@2.6.4
+
+cd /athena/angsd/scratch/gyu4002/Project2/data
+
+for bam in Dmel_control_*.trimmed.sorted.bam; do sample=${bam%%.*}; echo $sample; geneBody_coverage.py  -i $bam -r /athena/angsd/scratch/gyu4002/Project2/ref/annot.bed  -o /athena/angsd/scratch/gyu4002/Project2/data/rseqc_geneBody_coverage/output/${sample}_rseqc_geneBody_coverage.out; done
+
+echo "Done ALL"
+
+```
+
+
+#### Multiqc on gene body coverage
+
+```{mutiqc on gene body coverage}
+spack load -r py-multiqc
+
+cd /athena/angsd/scratch/gyu4002/Project2/data/rseqc_geneBody_coverage
+
+multiqc .
+
+scp gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/data/rseqc_geneBody_coverage/multiqc_report.html gene_body_coverage_multiqc_report.html
+```
+
+![](/Users/verayu/Desktop/ANGSD/rseqc_gene_body_coverage_plot.png)
+The result shows that samples are slighly biased towards 3' end.
+
+
+
+
+### Featurecounts
+
+To know if the library is stranded or reverse stranded, I ran featurecounts on one sample.
+
+![](/Users/verayu/Desktop/ANGSD/count_s1.png)
+![](/Users/verayu/Desktop/ANGSD/count_s2.png)
+From this, we can see that the alignment rate of stranded (s1) is only 6.3%, while the alignment rate of reverse stranded (s2) is 80.2%. Thus the library is reversely stranded.
+
+```{featurecounts}
+
+spack load subread
+
+featureCounts -T 5  -p -t exon -g gene_id -s 2 -a /athena/angsd/scratch/gyu4002/Project2/ref/Drosophila_melanogaster.BDGP6.84.gtf -o /athena/angsd/scratch/gyu4002/Project2/data/All_trimmed_gene_count.txt *.trimmed.sorted.bam
+
+scp gyu4002@aphrodite.med.cornell.edu:/athena/angsd/scratch/gyu4002/Project2/data/All_trimmed_gene_count.txt  .
+```
+
+Parameters:\
+
+-T: number of threads\
+-p: countReadPairs because I have paired-end reads\
+-t exon: feature type is exon\
+-g gene_id: e attribute type is gene_id\
+-s 2: the library is reverse stranded\
+
+
+### Differential expression analysis
+
+#### Load libraries
+
+```{r, message=FALSE, warning=FALSE}
+#BiocManager::install("org.Dm.eg.db")
+library(org.Dm.eg.db) 
+library(DESeq2)
+library(magrittr)
+library(EnhancedVolcano)
+library(pheatmap)
+library(gridExtra)
+#BiocManager::install("enrichplot")
+#BiocManager::install("clusterProfiler")
+library(enrichplot)
+library(clusterProfiler)
+```
+
+
+### Count data processing
+
+```{r}
+count_table <- read.table("/Users/verayu/Desktop/ANGSD/All_trimmed_gene_count.txt", header = TRUE, sep = "")
+
+orig_names <- names(count_table) 
+
+row.names(count_table) <- make.names(count_table$Geneid)
+
+count_table <- count_table[ , -c(1:6)]
+#head(count_table)
+```
+
+### Covert flybaseID to gene symbol
+
+```{r}
+keytypes(org.Dm.eg.db)
+
+genes <- rownames(count_table)
+
+anno.genes <- AnnotationDbi::select(org.Dm.eg.db,
+keys = genes, 
+keytype="FLYBASE", 
+columns=c("SYMBOL")) 
+
+# If can't find the corresponding gene name, then just use the gene ID
+for (i in 1:nrow(anno.genes)) {
+  if (is.na(anno.genes[i, "SYMBOL"])){
+    anno.genes[i, "SYMBOL"] <- anno.genes[i, "FLYBASE"]
+  }
+}
+
+head(anno.genes)
+#tail(anno.genes)
+#sum(is.na(anno.genes))
+
+rownames(count_table) <- anno.genes$SYMBOL
+
+```
+
+
+### Remove selected lines:
+
+The data I am working has 47 samples for Dmel.\
+It has two treatments: control (Ctl) vs parasitized (Par) \
+for each treatment, sample were taken from two time points : 5h and 50h \
+besides that, it also selected two lines of D. melanogaster for increased resistance (S1 &S2) and two control lines (C1 & C2) \
+
+
+for my project\
+I decided not to worry about the two lines of D. melanogaster for increased resistance (S1 &S2) \
+and only focus on the two control lines (C1 & C2) \
+which gives me: \
+3 replicates ctl 5h C1 \
+3 replicates ctl 50h C1 \
+3 replicates par 5h C1 \
+3 replicates par 50h C1 \
+3 replicates ctl 5h C2 \
+3 replicates ctl 50h C2 \
+3 replicates par 5h C2 \
+3 replicates par 50h C2 \
+
+I have downloaded and aligned and feature counted all 47 samples just in case if I need them.\
+
+Below is how I subset the wanted Dmel control lines.\
+(The line info was found through https://github.com/lauraalazar/RNAseq-Drosophila-parasitoids/blob/master/counts/targets.txt)
+
+
+```{r}
+line_info <- read.table("/Users/verayu/Desktop/ANGSD/line_info.txt", header = TRUE, sep = "")
+SRR <- read.table("/Users/verayu/Desktop/ANGSD/filereport_read_run_PRJEB15540_tsv.txt", header = TRUE, sep = "\t")
+
+line_SRR <- cbind(line_info,SRR)
+
+line_SRR <- line_SRR[line_SRR$line != "sec" & line_SRR$line != "sim" & line_SRR$line != "yak",]
+
+# add a sample name column in the file
+line_SRR$sample_name <- gsub("anogaster","",line_SRR$sample_title)
+line_SRR$sample_name <- gsub(". ","",line_SRR$sample_name, fixed=TRUE)
+line_SRR$sample_name <- gsub(" ","_",line_SRR$sample_name, fixed=TRUE)
+line_SRR$sample_name <- paste(line_SRR$sample_name, line_SRR$run_accession, sep="_")
+line_SRR$sample_name <- paste(line_SRR$sample_name, "trimmed.sorted.bam", sep=".")
+
+
+dmel_cline1 <- line_SRR[line_SRR$line == "melC1", ]
+dmel_cline2 <- line_SRR[line_SRR$line == "melC2", ]
+
+
+```
+
+Subset C1 and C2 and change colnames
+
+```{r}
+count_table_c1 <- count_table[, dmel_cline1$sample_name]
+count_table_c2 <- count_table[, dmel_cline2$sample_name]
+
+change_colnames <- function(df) {
+  
+  for (i in colnames(df)){
+    #print(i)
+    sample <- line_SRR[line_SRR$sample_name ==i, "sample"]
+    #print(sample)
+    new_name <- gsub("ERR[1-9]+.+","",i)
+    new_name <- paste(new_name, sample, sep='')
+    new_name <- gsub("_control_","_ctl_",new_name)
+    new_name <- gsub("_parasitized_","_par_",new_name)
+    #print(new_name)
+    
+    names(df)[names(df) == i] <- new_name
+  }
+  return(df)
+}
+
+count_table_c1 <- change_colnames(count_table_c1)
+count_table_c2 <- change_colnames(count_table_c2)
+
+count_table_c1 <- count_table_c1[,order(colnames(count_table_c1))]
+count_table_c2 <- count_table_c2[,order(colnames(count_table_c2))]
+
+```
+
+
+### Prepare coldata
+
+I have 2 condition (ctl vs. par) and 2 timepoints (5h vs. 50h)
+
+```{r}
+
+sample_info_1 <- DataFrame(condition = gsub("_[50]+_sample[0-9]+$", "", names(count_table_c1)), timepoint = gsub("^Dmel_[a-z]+_", "", gsub("_sample[0-9]+$", "", names(count_table_c1))),
+row.names = names(count_table_c1))
+sample_info_1
+
+sample_info_2 <- DataFrame(condition = gsub("_[50]+_sample[0-9]+$", "", names(count_table_c2)), timepoint = gsub("^Dmel_[a-z]+_", "", gsub("_sample[0-9]+$", "", names(count_table_c2))),
+row.names = names(count_table_c2) )
+sample_info_2
+
+```
+
+```{r}
+DESeq.ds.c1 <- DESeqDataSetFromMatrix(countData = as.matrix(count_table_c1),
+colData = sample_info_1,
+design = ~ condition + timepoint + condition:timepoint)
+
+
+#head(counts(DESeq.ds))
+colSums(counts(DESeq.ds.c1))
+
+DESeq.ds.c2 <- DESeqDataSetFromMatrix(countData = as.matrix(count_table_c2),
+colData = sample_info_2,
+design = ~ condition + timepoint + condition:timepoint)
+
+
+#head(counts(DESeq.ds))
+colSums(counts(DESeq.ds.c2))
+```
+
+### Remove abnormal count samples
+
+```{r}
+colSums(counts(DESeq.ds.c1)) %>% barplot(cex.names=0.5,las=2)
+colSums(counts(DESeq.ds.c2)) %>% barplot(cex.names=0.5,las=2)
+```
+
+It seems like Dmel_par_50_sample38 in C1 and Dmel_par_5_sample54 in C2 is very weird. So I decided to exclude these two samples.\
+
+And so I decide to combine the two control line so I have at least 5 replicates for each condition.\
+
+### Combine two control lines
+
+
+```{r}
+count_table_c1 <- within(count_table_c1, rm("Dmel_par_50_sample38"))
+count_table_c2 <- within(count_table_c2, rm("Dmel_par_5_sample54"))
+
+count_table_c1c2 <- cbind(count_table_c1,count_table_c2)
+count_table_c1c2 <- count_table_c1c2[,order(colnames(count_table_c1c2))]
+
+sample_info_c1c2 <- DataFrame(condition = gsub("_[50]+_sample[0-9]+$", "", names(count_table_c1c2)), timepoint = gsub("^Dmel_[a-z]+_", "", gsub("_sample[0-9]+$", "", names(count_table_c1c2))),
+row.names = names(count_table_c1c2) )
+sample_info_c1c2
+
+DESeq.ds.c1c2 <- DESeqDataSetFromMatrix(countData = as.matrix(count_table_c1c2),
+colData = sample_info_c1c2,
+design = ~ condition + timepoint + condition:timepoint)
+colSums(counts(DESeq.ds.c1c2)) %>% barplot(cex.names=0.5,las=2)
+```
+
+### Delete no count genes
+
+```{r}
+
+dim(DESeq.ds.c1c2)
+keep_genes <- rowSums(counts(DESeq.ds.c1c2)) > 0
+DESeq.ds.c1c2 <- DESeq.ds.c1c2[ keep_genes, ]
+dim(DESeq.ds.c1c2)
+
+```
+
+### Plot size factors
+
+```{r, fig.width=12, fig.height=7}
+#png("size_factor.png",width=1500, height=900)
+DESeq.ds.c1c2 <- estimateSizeFactors(DESeq.ds.c1c2) 
+plot( sizeFactors(DESeq.ds.c1c2), colSums(counts(DESeq.ds.c1c2)),
+ylab = "library sizes", xlab = "size factors", cex = 2.4,cex.lab=2.1, cex.axis=1.5 )
+
+#dev.off()
+```
+.
+
+### PCA plot
+
+```{r}
+#png("pca.png",width=750, height=450)
+DESeq.c1c2.rlog <- rlog(DESeq.ds.c1c2, blind = TRUE)
+PCA <- plotPCA(DESeq.c1c2.rlog,intgroup = c("condition","timepoint"))
+PCA
+#dev.off()
+```
+
+
+### nbinomWaldTest
+
+```{r}
+DESeq.ds.c1c2 <- DESeq(DESeq.ds.c1c2)
+DESeq.ds.c1c2 <- estimateSizeFactors(DESeq.ds.c1c2)
+DESeq.ds.c1c2 <- estimateDispersions(DESeq.ds.c1c2)
+DESeq.ds.c1c2 <- nbinomWaldTest(DESeq.ds.c1c2)
+```
+
+
+```{r}
+resultsNames(DESeq.ds.c1c2)
+?results
+
+```
+
+### Par5 vs. Ctl5 (interest)
+
+```{r}
+# par / ctl
+DGE.results.c1c2.par5.ctl5 <- results(DESeq.ds.c1c2, independentFiltering = TRUE, alpha = 0.05, contrast=c("condition", "Dmel_par", "Dmel_ctl"))
+
+head(DGE.results.c1c2.par5.ctl5)
+table(DGE.results.c1c2.par5.ctl5$padj < 0.05 & abs(DGE.results.c1c2.par5.ctl5$log2FoldChange) > 1 )
+
+```
+
+### Ctl50 vs. Ctl5
+
+```{r}
+# 50/5
+DGE.results.c1c2.ctl50.ctl5 <- results(DESeq.ds.c1c2, independentFiltering = TRUE, alpha = 0.05, contrast=c("timepoint","50","5"))
+
+head(DGE.results.c1c2.ctl50.ctl5)
+table(DGE.results.c1c2.ctl50.ctl5$padj < 0.05 & abs(DGE.results.c1c2.ctl50.ctl5$log2FoldChange) > 1 )
+
+```
+
+
+### Par50 vs. Par5
+
+```{r}
+# 50/5
+DGE.results.c1c2.par50.par5 <- results(DESeq.ds.c1c2, independentFiltering = TRUE, alpha = 0.05, list( c("timepoint_50_vs_5",  "conditionDmel_par.timepoint50")))
+
+head(DGE.results.c1c2.par50.par5)
+table(DGE.results.c1c2.par50.par5$padj < 0.05 & abs(DGE.results.c1c2.par50.par5$log2FoldChange) > 1 )
+
+```
+
+
+
+### Par50 vs. Ctl50 (interest)
+
+```{r}
+# par/ctl
+DGE.results.c1c2.par50.ctl50 <- results(DESeq.ds.c1c2, independentFiltering = TRUE, alpha = 0.05, list( c("condition_Dmel_par_vs_Dmel_ctl",  "conditionDmel_par.timepoint50")))
+
+head(DGE.results.c1c2.par50.ctl50)
+table(DGE.results.c1c2.par50.ctl50$padj < 0.05 & abs(DGE.results.c1c2.par50.ctl50$log2FoldChange) > 1 )
+```
+
+
+```{r}
+print("Par5 vs Ctl 5")
+table(DGE.results.c1c2.par5.ctl5$padj < 0.05 & abs(DGE.results.c1c2.par5.ctl5$log2FoldChange) > 1 )
+
+print("Ctl50 vs. Ctl5")
+table(DGE.results.c1c2.ctl50.ctl5$padj < 0.05 & abs(DGE.results.c1c2.ctl50.ctl5$log2FoldChange) > 1 )
+
+
+print("Par50 vs. Par5")
+table(DGE.results.c1c2.par50.par5$padj < 0.05 & abs(DGE.results.c1c2.par50.par5$log2FoldChange) > 1 )
+
+
+print("Par50 vs. Ctl50")
+table(DGE.results.c1c2.par50.ctl50$padj < 0.05 & abs(DGE.results.c1c2.par50.ctl50$log2FoldChange) > 1 )
+
+```
+
+### Volcano plot
+
+```{r, fig.width=15, fig.height=12}
+#hist(DGE.results.c1c2.par50.ctl50$padj, col="grey", border="white", xlab="", ylab="", main="frequencies of adj. p-values\n(all genes)", cex = 0.4)
+
+#hist(DGE.results.c1c2.par50.ctl50$log2FoldChange, col="grey", border="white", xlab="", ylab="", main="frequencies of log2FC\n(all genes)", cex = 0.4)
+
+#png("volcano_par5_ctl5.png",width=1200, height=1200)
+volcano.par5.ctl5 <- EnhancedVolcano(DGE.results.c1c2.par5.ctl5,
+lab = rownames(DGE.results.c1c2.par5.ctl5),
+x = 'log2FoldChange', y = 'padj', pCutoff = 0.05, title = "Volcano Plot par5 / ctl5", pointSize = 7.0, labSize = 7, axisLabSize = 24, titleLabSize = 36, legendLabSize = 21, legendIconSize = 7, legendPosition= 'top', ylim = c(0,20), caption = NULL, subtitle = NULL,col = c('lightsteelblue4','mediumpurple', 'lightskyblue', 'red'))
+#col = c('mistyrose3','lightsteelblue4', 'lightpink3', 'slateblue2')
+print(volcano.par5.ctl5)
+#dev.off()
+
+#png("volcano_ctl50_ctl5.png",width=1200, height=1200)
+volcano.ctl50.ctl5 <- EnhancedVolcano(DGE.results.c1c2.ctl50.ctl5,
+lab = rownames(DGE.results.c1c2.ctl50.ctl5),
+x = 'log2FoldChange',
+y = 'padj', pCutoff = 0.05, title = "Volcano Plot ctl50 / ctl5", pointSize = 7.0, labSize = 7, axisLabSize = 24, titleLabSize = 36, legendLabSize = 21, legendIconSize = 7, legendPosition= 'top', ylim = c(0,25), caption = NULL, subtitle = NULL,col = c('lightsteelblue4','mediumpurple', 'lightskyblue', 'red'))
+print(volcano.ctl50.ctl5)
+#dev.off()
+
+#png("volcano_par50_par5.png",width=1200, height=1200)
+volcano.par50.par5 <- EnhancedVolcano(DGE.results.c1c2.par50.par5,
+lab = rownames(DGE.results.c1c2.par50.par5),
+x = 'log2FoldChange',
+y = 'padj', pCutoff = 0.05, title = "Volcano Plot par50 / par5", pointSize = 7.0, labSize = 7, axisLabSize = 24, titleLabSize = 36, legendLabSize = 21, legendIconSize = 7, legendPosition= 'top', ylim = c(0,25), caption = NULL, subtitle = NULL,col = c('lightsteelblue4','mediumpurple', 'lightskyblue', 'red'))
+print(volcano.par50.par5)
+#dev.off()
+
+#png("volcano_par50_ctl50.png",width=1200, height=1200)
+volcano.par50.ctl50 <- EnhancedVolcano(DGE.results.c1c2.par50.ctl50,
+lab = rownames(DGE.results.c1c2.par50.ctl50),
+x = 'log2FoldChange',
+y = 'padj', pCutoff = 0.05, title = "Volcano Plot par50 / ctl50", pointSize = 7.0, labSize = 7, axisLabSize = 24, titleLabSize = 36, legendLabSize = 21, legendIconSize = 7, legendPosition= 'top', ylim = c(0,30), caption = NULL, subtitle = NULL,col = c('lightsteelblue4','mediumpurple', 'lightskyblue', 'red'))
+print(volcano.par50.ctl50)
+#dev.off()
+```
+
+
+### Heatmap T5
+
+
+```{r, fig.width=12, fig.height=12}
+DGE.results.c1c2.par5.ctl5.sorted <- DGE.results.c1c2.par5.ctl5[order(DGE.results.c1c2.par5.ctl5$padj),]
+
+DGEgenes.5 <- rownames(subset(DGE.results.c1c2.par5.ctl5.sorted, padj < 0.05 & abs(log2FoldChange) > 1))
+t5 <- grep("Dmel.+_5_sample[0-9]+", colnames(DESeq.ds.c1c2), value = TRUE)
+rlog.dge <- DESeq.c1c2.rlog[DGEgenes.5,t5] %>% assay
+
+
+#png("heatmap_t5.png",width=1200, height=1200)
+pheatmap(rlog.dge, scale="row", show_rownames = TRUE, show_colnames = TRUE, border_color = NA,fontsize = 27, fontsize_col = 17, fontsize_row = 15, width = 20, height = 240, main = "DGE (row-based z-score) par5 vs.ctl5")
+#dev.off()
+```
+
+
+### Heatmap T50
+
+```{r, fig.width=12, fig.height=15}
+DGE.results.c1c2.par50.ctl50.sorted <- DGE.results.c1c2.par50.ctl50[order(DGE.results.c1c2.par50.ctl50$padj),]
+
+DGEgenes.50 <- rownames(subset(DGE.results.c1c2.par50.ctl50.sorted, padj < 0.05 & abs(log2FoldChange) > 1))
+t50 <- grep("Dmel.+_50_sample[0-9]+", colnames(DESeq.ds.c1c2), value = TRUE)
+rlog.dge <- DESeq.c1c2.rlog[DGEgenes.50,t50] %>% assay
+
+
+#png("heatmap_t50.png",width=1200, height=1200)
+pheatmap(rlog.dge, scale="row", show_rownames = TRUE, show_colnames = TRUE, border_color = NA,fontsize = 27, fontsize_col = 17, fontsize_row = 15, width = 20, height = 240, main = "DGE (row-based z-score) par50 vs.ctl50")
+#dev.off()
+```
+
+
+### Gene Ontology T5
+
+
+```{r}
+table(DGE.results.c1c2.par5.ctl5$padj < 0.05 & abs(DGE.results.c1c2.par5.ctl5$log2FoldChange) > 1 )
+
+signif_res.par5.ctl5 <- DGE.results.c1c2.par5.ctl5[DGE.results.c1c2.par5.ctl5$padj < 0.05 & abs(DGE.results.c1c2.par5.ctl5$log2FoldChange) > 1  & !is.na(DGE.results.c1c2.par5.ctl5$padj), ]
+signif_genes.par5.ctl5 <- as.character(rownames(signif_res.par5.ctl5))
+
+```
+
+
+```{r, fig.height=10}
+ego.5 <- enrichGO(gene = signif_genes.par5.ctl5, 'org.Dm.eg.db', keyType = "SYMBOL", ont = "ALL",pAdjustMethod = "BH",qvalueCutoff = 0.05)
+summary.5 <- data.frame(ego.5)
+#ont= ALL
+
+#png("GO_barplot_t5.png",width=900, height=1500)
+#barplot(ego.5, showCategory=27 ,font.size = 24)+ ggtitle("GO par5 vs.ctl5 Barplot")+ theme(plot.title = element_text(size = 40, face = "bold")) + theme(legend.title = element_text(size = 24),legend.text = element_text(size = 21))
+#dev.off()
+barplot(ego.5, showCategory=27)+ ggtitle("GO par5 vs.ctl5 Barplot")
+
+#png("GO_dotplot_t5.png",width=900, height=1500)
+#dotplot(ego.5, showCategory=50 ,font.size = 24) + ggtitle("GO par5 vs.ctl5 Dotplot")+ theme(plot.title = element_text(size = 40, face = "bold"))+ theme(legend.title = element_text(size = 24),legend.text = element_text(size = 21))
+#dev.off()
+dotplot(ego.5, showCategory=50) + ggtitle("GO par5 vs.ctl5 Dotplot")
+```
+
+
+### Gene Ontology T50
+
+```{r}
+table(DGE.results.c1c2.par50.ctl50$padj < 0.05 & abs(DGE.results.c1c2.par50.ctl50$log2FoldChange) > 1 )
+
+signif_res.par50.ctl50 <- DGE.results.c1c2.par50.ctl50[DGE.results.c1c2.par50.ctl50$padj < 0.05 & abs(DGE.results.c1c2.par50.ctl50$log2FoldChange) > 1  & !is.na(DGE.results.c1c2.par50.ctl50$padj), ]
+signif_genes.par50.ctl50 <- as.character(rownames(signif_res.par50.ctl50))
+
+```
+
+
+```{r}
+ego.50 <- enrichGO(gene = signif_genes.par50.ctl50, 'org.Dm.eg.db', keyType = "SYMBOL", ont = "ALL",pAdjustMethod = "BH",qvalueCutoff = 0.05)
+summary.50 <- data.frame(ego.50)
+
+#png("GO_barplot_t50.png",width=900, height=1500)
+#barplot(ego.50, showCategory=20 ,font.size = 24)+ ggtitle("GO par50 vs.ctl50 Barplot")+ theme(plot.title = element_text(size = 40, face = "bold")) + theme(legend.title = element_text(size = 24),legend.text = element_text(size = 21))
+#dev.off()
+barplot(ego.50, showCategory=20)+ ggtitle("GO par50 vs.ctl50 Barplot")
+
+#png("GO_dotplot_t50.png",width=900, height=1500)
+#dotplot(ego.50, showCategory=50 ,font.size = 24) + ggtitle("GO par50 vs.ctl50 Dotplot")+ theme(plot.title = element_text(size = 40, face = "bold"))+ theme(legend.title = element_text(size = 24),legend.text = element_text(size = 21))
+#dev.off()
+dotplot(ego.50, showCategory=50) + ggtitle("GO par50 vs.ctl50 Dotplot")
+```
+
+
+### NF-kappa beta pathway genes
+
+DEGs of T5 that contribute to immune response:
+
+```{r}
+summary.5[summary.5$Description == "immune response", "geneID"]
+```
+
+By researching on Flybase, I found that 4 of these 10 genes encoding components of the immune responsive pathways Imd (PGRP-SB1, DptA, DptB) and the Toll pathways (Mtk).
+
+```{r}
+#NFkb <- c("dl","Dif","Rel","cact","Tl","tub","pll","spz","imd","PGRP-LC","PGRP-LE")
+
+NFkb <- c("PGRP-SB1","Mtk","DptA","DptB")
+DGE.results.c1c2.par5.ctl5[NFkb, c("log2FoldChange","padj")]
+#DGE.results.c1c2.ctl50.ctl5[NFkb, c("log2FoldChange","padj")]
+#DGE.results.c1c2.par50.par5[NFkb, c("log2FoldChange","padj")]
+DGE.results.c1c2.par50.ctl50[NFkb, c("log2FoldChange","padj")]
+```
+
+
+
+```{r, fig.width= 15, fig.height=7 }
+PGRP <- plotCounts(DESeq.ds.c1c2, gene="PGRP-SB1",intgroup = c("condition","timepoint"), normalized = TRUE, returnData=TRUE)
+PGRP$condition_timepoint <- paste(PGRP$condition, PGRP$timepoint, sep="_")
+
+PGRP_p <- ggplot(PGRP, aes(x = condition_timepoint, y = count, color = condition_timepoint)) + 
+  geom_point(position=position_jitter(w = 0.1,h = 0),size = 5) + 
+  theme_bw() +
+  ggtitle("Peptidoglycan recognition SB1 (PGRP-SB1)") +
+  ylab("Normalized Count")+
+  xlab(" ")+
+  scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+  expand_limits(y = 0)+ ylim(0,200)+
+  theme(plot.title = element_text(hjust = 0.5))+ theme(plot.title = element_text(size=21, face='bold'))+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=17,face="bold"))+
+  theme(legend.title = element_text(size=13),
+        legend.text = element_text(size=12))
+
+
+mtk <- plotCounts(DESeq.ds.c1c2, gene="Mtk",intgroup = c("condition","timepoint"), normalized = TRUE, returnData=TRUE)
+mtk$condition_timepoint <- paste(mtk$condition, mtk$timepoint, sep="_")
+
+mtk_p <- ggplot(mtk, aes(x = condition_timepoint, y = count, color = condition_timepoint)) + 
+  geom_point(position=position_jitter(w = 0.1,h = 0),size = 5) + 
+  theme_bw() +
+  ggtitle("Metchnikowin (Mtk)") +
+  ylab("Normalized Count")+
+  xlab(" ")+
+  scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+  expand_limits(y = 0)+ ylim(0,200)+
+  theme(plot.title = element_text(hjust = 0.5))+ theme(plot.title = element_text(size=21, face='bold'))+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=17,face="bold"))+
+  theme(legend.title = element_text(size=13),
+        legend.text = element_text(size=12))
+  
+
+dptA <- plotCounts(DESeq.ds.c1c2, gene="DptA",intgroup = c("condition","timepoint"), normalized = TRUE, returnData=TRUE)
+dptA$condition_timepoint <- paste(dptA$condition, dptA$timepoint, sep="_")
+
+dptA_p <- ggplot(dptA, aes(x = condition_timepoint, y = count, color = condition_timepoint)) + 
+  geom_point(position=position_jitter(w = 0.1,h = 0),size = 5) + 
+  theme_bw() +
+  ggtitle("Diptericin A (DptA)") +
+  ylab("Normalized Count")+
+  xlab(" ")+
+  scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+  expand_limits(y = 0)+
+  theme(plot.title = element_text(hjust = 0.5))+ theme(plot.title = element_text(size=21, face='bold'))+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=17,face="bold"))+
+  theme(legend.title = element_text(size=13),
+        legend.text = element_text(size=12))
+
+
+dptB <- plotCounts(DESeq.ds.c1c2, gene="DptB",intgroup = c("condition","timepoint"), normalized = TRUE, returnData=TRUE)
+dptB$condition_timepoint <- paste(dptB$condition, dptB$timepoint, sep="_")
+
+dptB_p <- ggplot(dptB, aes(x = condition_timepoint, y = count, color = condition_timepoint)) + 
+  geom_point(position=position_jitter(w = 0.1,h = 0),size = 5) + 
+  theme_bw() +
+  ggtitle("Diptericin B (DptB)") +
+  ylab("Normalized Count")+
+  xlab(" ")+
+  scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+  expand_limits(y = 0)+
+  theme(plot.title = element_text(hjust = 0.5))+ theme(plot.title = element_text(size=21, face='bold'))+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=17,face="bold"))+
+  theme(legend.title = element_text(size=13),
+        legend.text = element_text(size=12))
+
+
+#png("NFkb_gene_count.png",width=1500, height=900)
+grid.arrange(PGRP_p, mtk_p, dptA_p, dptB_p, ncol = 2)
+#dev.off()
+```
+
+
+# Results
+
+The reults of quality controls were discussed in the methond section. In this section, only results of differential expression gene analysis are discussed. 
+
+Selected plots for results and discussion:
+
+```{r}
+PCA
+```
+
+![](/Users/verayu/Desktop/ANGSD/volcano_par5_ctl5.png)
+
+![](/Users/verayu/Desktop/ANGSD/volcano_ctl50_ctl5.png)
+![](/Users/verayu/Desktop/ANGSD/volcano_par50_par5.png)
+
+![](/Users/verayu/Desktop/ANGSD/volcano_par50_ctl50.png)
+
+
+```{r, fig.width=12, fig.height=15}
+pheatmap(rlog.dge, scale="row", show_rownames = TRUE, show_colnames = TRUE, border_color = NA,fontsize = 27, fontsize_col = 17, fontsize_row = 15, width = 20, height = 240, main = "DGE (row-based z-score) par5 vs.ctl5")
+
+pheatmap(rlog.dge, scale="row", show_rownames = TRUE, show_colnames = TRUE, border_color = NA,fontsize = 27, fontsize_col = 17, fontsize_row = 15, width = 20, height = 240, main = "DGE (row-based z-score) par50 vs.ctl50")
+```
+
+![](/Users/verayu/Desktop/ANGSD/GO_dotplot_t5.png)
+
+![](/Users/verayu/Desktop/ANGSD/GO_dotplot_t50.png)
+![](/Users/verayu/Desktop/ANGSD/NFkb_gene_count.png)
+
+
+Samples in different groups are not well clustered and different groups are not well separated. In addition, the PCA plot shows that different timepoints dominate the difference which indicates that the parasite response is more subtle compared to the developmental changes.The first two PCs only show about 62% of the variance in the data. Thus, it is possible that other PCs can provide better separation.\
+
+The four volcano plots shows that there is far more DEG in Ctl50 vs. Ctl5 and Par50 vs. Par5 compared to Par5 vs. Ctl5 and Par50 vs. Ctl50. This explains why the PCA plot shows that different timepoints cause more differences; more genes are deferentially expressed during development compared to parasitization. In the volcano plot of Par5 vs. Ctl5, we can see that gene TotA, TotB, and TotC are unregulated after parasitization. These three genes are involved in the JAK-STAT immune pathway in Drosophila larva. This finding is consistent with previous studies that found activation of JAK-STAT immune pathway after parasitoid wasp infection (Yang et al., 2015). \
+
+The heatmap of significantly DEG at 5h (par5 vs. ctl5) can illustrate the cluster of samples with and without parasitization. The heatmap of significantly DEG at 50h (par50 vs. ctl50)， however, showes two abnormal control samples, sample 45 and sample 79. These two samples shows many significantly high-expressed genes that are not expressed in other four samples. This might due to data contamination. \
+
+The GO enrichment dotplot of significantly DEG at 5h (par5 vs. ctl5) shows the functional characteristics of the significantly DEG. Although the most number of DEG participate in 
+response to stimulus. About 10 DEG are involved in defense response and immune response including humoral immune response and innate immune response. The 10 DEG involved in immune response are: Eig71Ee, PGRP-SB1, edin, AttC, Mtk, DptA, DptB, lectin-24A, Tep2, and Tep1. Among these 10 genes, Peptidoglycan recognition protein SB1 (PGRP-SB1), Diptericin A (DptA), Diptericin B (DptB) encode components of the Imd immune responsive pathways, and Metchnikowin (Mtk) encodes components of the Toll immune responsive pathways. These four up-regulated genes in the parasitized samples indicates that the NF-kappa beta immune pathways of Drosophila melanogaster are activated upon wasp parasitoid infection. The normalized count plots of these four genes are also generated. \
+
+The  GO enrichment dotplot of significantly DEG at 50h (par50 vs. ctl50) shows far less categories of DEG and shows that no gene that participate in immune response is differentially expressed. This indicate two things: 1. the abnormal number of DEG that the two control samples (sample 45 and sample 79) have are likely due to contanmination because they are not assigned to any GO terms. 2. the immune response to wasp infection are initiated quickly and completed before 50 hours time point after parasitization.\
+
+In summary, the results support the hypothesis that wasp parasitization of Drosophila larvae does activate NF-kappa beta immune pathways - the Toll pathway and the Imd pathway. The immune response is likely to be initiated fast and completed before 50 hours after wasp infect. One limitation of this study that the 50 hour timepoint seems not be able to capture any immune response and rather redundant. Future experiment can, instead of study timepoint of 50h, use another timepoint before 50h such as 30h to capture the immune response before completion. In addition, samples can be studied at more time point to investigate the exact initiation time range and completion time range of immune response towards parasitization. Future studies on NF-kappa beta pathway immune response upon wasp infection can also utilize single cell RNA-seq datato further study the diversity of hemocytes and gain more insights into the immune system of Drosophila.\
+
+
+
+# Discussion
+
+Data downloading, quality check and alignments were time consuming given that it included 47 samples. Two samples in the non-selected lines have abnormal sequence count and thus are removed from the dataset (see section 2.3.11). After the two samples are removed, non-selected line1(C1) and non-selected line2(C2) were combined to ensure at least 5 replicates per group (see section 2.3.12). The differential expression gene analysis was a little bit tricky because this study includes two condition: Parasitized (par) vs. Control (ctl) and two time points: 50h(50) vs. 5h(5). Thus, contrast and interaction were involved in the study and DEG of Par5 vs. Ctl5, Ctl50 vs. Ctl5, Par50 vs. Par5, and Par50 vs. Ctl50 were analyzed separately. The PCA plot is not ideal as different groups are not well separated. This is likely due to that the developmental changes are much more severe compared to immune response for parasitization. This is also later confirmed by the volcano plots - there are more DEG when comparing different timepoints (Ctl50 vs. Ctl5 and Par50 vs. Par5). In addition, the PCA plot shows that the first two PCs only show about 62% of the variance and thus, some other PCs maybe able to provide better separation. Another big problem of this study is the heatmap of DEG at 50h (par50 vs. ctl50). Two control samples, sample 45 and sample 79, presented a large set of DEG that were not expressed in other four controls. This was at first very concerning. Then, the GO enrichment analysis shows that those abnormally expressed genes can not be assigned to any GO terms. Thus, it is possibly that the two control samples were contaminated. It also explains the not-well separated groups in the PCA plot. All in all, I was able to identify four, although not many, up-regulated genes in the parasitized samples which indicates that the NF-kappa beta immune pathways of Drosophila melanogaster are activated upon wasp parasitic infection. In addition, 3 genes that participate in the JAK-STAT immune pathway were also found to be up-regulated in the parasitized samples which is consistent with other previous studies find (Yang et al., 2015).
+
+
+# Table that summarizes the key data sets
+
+| Key Dataset                  	| Type                       	| Description                                                                                                                                                                                 	|
+|------------------------------	|----------------------------	|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	|
+| count_table_c1c2             	| data.frame                 	| count table that includes non-selected line1 (C1) and non-selected line2 (C2); Flybase ID are converted to gene symbols; sample 38 and sample 54 are excluded; no count genes are excluded  	|
+| DESeq.ds.c1c2                	| DESeqDataSet               	| DESeqDataSet of count_table_c1c2                                                                                                                                                            	|
+| DESeq.c1c2.rlog              	| RangedSummarizedExperiment 	| rlog transformed of DESeq.ds.c1c2                                                                                                                                                           	|
+| DGE.results.c1c2.par5.ctl5   	| DESeqResults               	| results of DESeq.ds.c1c2 - Par5 vs. Ctl5                                                                                                                                                    	|
+| DGE.results.c1c2.ctl50.ctl5  	| DESeqResults               	| results of DESeq.ds.c1c2 - Ctl50 vs. Ctl5                                                                                                                                                   	|
+| DGE.results.c1c2.par50.par5  	| DESeqResults               	| results of DESeq.ds.c1c2 - Par50 vs. Par5                                                                                                                                                   	|
+| DGE.results.c1c2.par50.ctl50 	| DESeqResults               	| results of DESeq.ds.c1c2 - Par50 vs. Ctl50                                                                                                                                                  	|
+| signif_res.par5.ctl5         	| DESeqResults               	| subset of results Par5 vs. Ctl5 that only contains DEG                                                                                                                                      	|
+| signif_res.par50.ctl50       	| DESeqResults               	| subset of results Par50 vs. Ctl50 that only contains DEG                                                                                                                                    	|
+| summary.5                    	| data.frame                 	| summary data frame of enrichGO results at t5                                                                                                                                                	|
+| summary.50                   	| data.frame                 	| summary data frame of enrichGO results at t50                                                                                                                                               	|
+
+
+
+
+
+# Reference
+
+Hetru, C., &amp; Hoffmann, J. A. (2009). NF-&nbsp;B in the immune response of drosophila. Cold Spring Harbor Perspectives in Biology, 1(6). https://doi.org/10.1101/cshperspect.a000232
+
+Higareda Alvear, V. M., Mateos, M., Cortez, D., Tamborindeguy, C., &amp; Martinez-Romero, E. (2021). Differential gene expression in a tripartite interaction: drosophila, spiroplasma and parasitic wasps. PeerJ, 9. https://doi.org/10.7717/peerj.11020 
+
+Minakhina, S., &amp; Steward, R. (2006). Nuclear factor-kappa B pathways in drosophila. Oncogene, 25(51), 6749–6757. https://doi.org/10.1038/sj.onc.1209940 
+
+Salazar-Jaramillo, L., Jalvingh, K. M., de Haan, A., Kraaijeveld, K., Buermans, H., &amp; Wertheim, B. (2017). Inter- and intra-species variation in genome-wide gene expression of drosophila in response to parasitoid wasp attack. BMC Genomics, 18(1). https://doi.org/10.1186/s12864-017-3697-3 
+
+Yang, H., Kronhamn, J., Ekström, J. O., Korkut, G. G., &amp; Hultmark, D. (2015). jak/stat signaling in d Rosophila muscles controls the cellular immune response against parasitoid infection. EMBO Reports, 16(12), 1664–1672. https://doi.org/10.15252/embr.201540277 
+
